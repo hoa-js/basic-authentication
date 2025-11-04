@@ -1,6 +1,6 @@
 import type { HoaContext, HoaMiddleware } from 'hoa'
 
-type MessageFunction = (c: HoaContext) => string | object | Promise<string | object>
+type MessageFunction = (c: HoaContext) => string | Promise<string>
 type HashFunction = (data: string | object | boolean) => string | Promise<string>
 
 type BasicAuthOptions =
@@ -9,25 +9,25 @@ type BasicAuthOptions =
     password: string
     realm?: string
     hashFunction?: HashFunction
-    invalidUserMessage?: string | object | MessageFunction
+    invalidUserMessage?: string | MessageFunction
   }
   | {
     verifyUser: (c: HoaContext, username: string, password: string) => boolean | Promise<boolean>
     realm?: string
     hashFunction?: HashFunction
-    invalidUserMessage?: string | object | MessageFunction
+    invalidUserMessage?: string | MessageFunction
   }
 
 /**
- * Basic Authentication Middleware for Hoa.
+ * Basic Authentication middleware for Hoa.
  *
  * @param {BasicAuthOptions} options - The options for basic authentication middleware.
  * @param {string} options.username - The username for authentication.
  * @param {string} options.password - The password for authentication.
- * @param {string} [options.realm="Hoa"] - The realm attribute for the WWW-Authenticate header.
- * @param {Function} [options.hashFunction] - The hash function used for secure comparison.
+ * @param {string} [options.realm=ctx.app.name] - The realm attribute for the WWW-Authenticate header.
+ * @param {HashFunction} [options.hashFunction] - The hash function used for secure comparison.
  * @param {Function} [options.verifyUser] - The function to verify user credentials.
- * @param {string | object | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
+ * @param {string | MessageFunction} [options.invalidUserMessage="Unauthorized"] - The invalid user message.
  * @returns {HoaMiddleware} The middleware handler function
  * @throws {HttpError} 401 Unauthorized when basic authentication fails
  */
@@ -40,13 +40,13 @@ export function basicAuth (options: BasicAuthOptions, ...users: { username: stri
       'Basic Auth middleware requires options for "username and password" or "verifyUser"'
     )
   }
-  const { realm = 'Hoa', hashFunction = defaultHashFunction, invalidUserMessage = 'Unauthorized' } = options
-  const usersWithDefault = [...users]
+  const { hashFunction = defaultHashFunction, invalidUserMessage = 'Unauthorized' } = options
   if (usernamePasswordInOptions) {
-    usersWithDefault.unshift({ username: options.username, password: options.password })
+    users.unshift({ username: options.username, password: options.password })
   }
 
   return async function basicAuthMiddleware (ctx: HoaContext, next) {
+    const realm = options.realm ?? ctx.app.name
     const requestUser = auth(ctx)
     if (requestUser) {
       if (verifyUserInOptions) {
@@ -55,7 +55,7 @@ export function basicAuth (options: BasicAuthOptions, ...users: { username: stri
           return
         }
       } else {
-        for (const user of usersWithDefault) {
+        for (const user of users) {
           const [usernameEqual, passwordEqual] = await Promise.all([
             timingSafeEqual(user.username, requestUser.username, hashFunction),
             timingSafeEqual(user.password, requestUser.password, hashFunction),
@@ -67,22 +67,16 @@ export function basicAuth (options: BasicAuthOptions, ...users: { username: stri
         }
       }
     }
-    const responseMessage =
-      typeof invalidUserMessage === 'function'
-        ? await invalidUserMessage(ctx)
-        : invalidUserMessage
-    ctx.throw(401, 'Unauthorized', { headers: { 'WWW-Authenticate': buildWwwAuthenticate(realm, 'invalid_token', responseMessage) } })
+    const responseMessage = typeof invalidUserMessage === 'function'
+      ? await invalidUserMessage(ctx)
+      : invalidUserMessage
+    ctx.throw(401, responseMessage, {
+      headers: {
+        // RFC 7617 Basic Authentication
+        'WWW-Authenticate': `Basic realm="${realm.replace(/"/g, '\\"')}"`
+      }
+    })
   }
-}
-
-function buildWwwAuthenticate (realm: string, code: string, description: string) {
-  // Following RFC 6750 format
-  const params = [
-    `Bearer realm="${realm.replace(/"/g, '\\"')}"`,
-    `error="${code}"`,
-    `error_description="${description.replace(/"/g, '\\"')}"`
-  ].filter(Boolean)
-  return params.join(', ')
 }
 
 const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
@@ -98,7 +92,7 @@ function decodeBase64 (str: string): Uint8Array {
   return bytes
 }
 
-function auth (ctx: HoaContext) {
+function auth (ctx: HoaContext): { username: string; password: string } | undefined {
   const match = CREDENTIALS_REGEXP.exec(ctx.req.get('Authorization') || '')
   if (!match) {
     return undefined
@@ -120,7 +114,7 @@ function auth (ctx: HoaContext) {
 async function timingSafeEqual (
   a: string | object | boolean,
   b: string | object | boolean,
-  hashFunction?: Function
+  hashFunction?: HashFunction
 ): Promise<boolean> {
   const [sa, sb] = await Promise.all([hashFunction(a), hashFunction(b)])
 
@@ -128,10 +122,10 @@ async function timingSafeEqual (
     return false
   }
 
-  return sa === sb && a === b
+  return sa === sb
 }
 
-async function defaultHashFunction (data: string | object | boolean) {
+async function defaultHashFunction (data: string | object | boolean): Promise<string> {
   const sourceBuffer = new TextEncoder().encode(JSON.stringify(data))
   const buffer = await crypto.subtle.digest({
     name: 'SHA-256'

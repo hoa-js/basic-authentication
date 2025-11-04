@@ -1,7 +1,7 @@
 {
   "name": "@hoajs/basic-auth",
-  "version": "0.1.1",
-  "description": "basic-authentication middleware for Hoa.",
+  "version": "0.1.0",
+  "description": "Basic Authentication middleware for Hoa.",
   "main": "./dist/cjs/index.js",
   "type": "module",
   "module": "./dist/esm/index.js",
@@ -35,14 +35,17 @@
   "keywords": [
     "hoa",
     "middleware",
+    "basic",
+    "auth",
+    "authentication",
     "basic-authentication",
     "basic-auth"
   ],
   "devDependencies": {
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-conventional": "20.0.0",
-    "@hoajs/tiny-router": "^0.1.0",
-    "@jest/globals": "^30.2.0",
+    "@hoajs/tiny-router": "0.1.0",
+    "@jest/globals": "30.2.0",
     "@types/jest": "30.0.0",
     "eslint": "9.37.0",
     "hoa": "*",
@@ -50,7 +53,7 @@
     "jest": "30.2.0",
     "neostandard": "0.12.2",
     "ts-jest": "29.4.5",
-    "ts-node": "^10.9.2",
+    "ts-node": "10.9.2",
     "tsup": "8.5.0",
     "typescript": "5.9.3"
   },

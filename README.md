@@ -1,6 +1,6 @@
 ## @hoajs/basic-auth
 
-Basic-Authentication middleware for Hoa.
+Basic Authentication middleware for Hoa.
 
 ## Installation
 
