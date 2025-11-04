@@ -3,7 +3,7 @@ import type { HoaContext, HoaMiddleware } from 'hoa'
 type MessageFunction = (c: HoaContext) => string | object | Promise<string | object>
 type HashFunction = (data: string | object | boolean) => string | Promise<string>
 
-type BasicAuthenticationOptions =
+type BasicAuthOptions =
   | {
     username: string
     password: string
@@ -21,7 +21,7 @@ type BasicAuthenticationOptions =
 /**
  * Basic Authentication Middleware for Hoa.
  *
- * @param {BasicAuthenticationOptions} options - The options for basic authentication middleware.
+ * @param {BasicAuthOptions} options - The options for basic authentication middleware.
  * @param {string} options.username - The username for authentication.
  * @param {string} options.password - The password for authentication.
  * @param {string} [options.realm="Hoa"] - The realm attribute for the WWW-Authenticate header.
@@ -31,13 +31,13 @@ type BasicAuthenticationOptions =
  * @returns {HoaMiddleware} The middleware handler function
  * @throws {HttpError} 401 Unauthorized when basic authentication fails
  */
-export function basicAuthentication (options: BasicAuthenticationOptions, ...users: { username: string; password: string }[]): HoaMiddleware {
+export function basicAuth (options: BasicAuthOptions, ...users: { username: string; password: string }[]): HoaMiddleware {
   const usernamePasswordInOptions = 'username' in options && 'password' in options
   const verifyUserInOptions = 'verifyUser' in options
 
   if (!(usernamePasswordInOptions || verifyUserInOptions)) {
     throw new Error(
-      'basic authentication middleware requires options for "username and password" or "verifyUser"'
+      'Basic Auth middleware requires options for "username and password" or "verifyUser"'
     )
   }
   const { realm = 'Hoa', hashFunction = defaultHashFunction, invalidUserMessage = 'Unauthorized' } = options
@@ -46,7 +46,7 @@ export function basicAuthentication (options: BasicAuthenticationOptions, ...use
     usersWithDefault.unshift({ username: options.username, password: options.password })
   }
 
-  return async function basicAuthenticationMiddleware (ctx: HoaContext, next) {
+  return async function basicAuthMiddleware (ctx: HoaContext, next) {
     const requestUser = auth(ctx)
     if (requestUser) {
       if (verifyUserInOptions) {
@@ -140,4 +140,4 @@ async function defaultHashFunction (data: string | object | boolean) {
   return hash
 }
 
-export default basicAuthentication
+export default basicAuth

@@ -1,21 +1,21 @@
-## @hoajs/basic-authentication
+## @hoajs/basic-auth
 
 Basic-Authentication middleware for Hoa.
 
 ## Installation
 
 ```bash
-$ npm i @hoajs/basic-authentication --save
+$ npm i @hoajs/basic-auth --save
 ```
 
 ## Quick Start
 
 ```js
 import { Hoa } from 'hoa'
-import { basicAuthentication } from '@hoajs/basic-authentication'
+import { basicAuth } from '@hoajs/basic-auth'
 
 const app = new Hoa()
-app.use(basicAuthentication())
+app.use(basicAuth())
 
 app.use(async (ctx) => {
   ctx.res.body = `Hello, Hoa!`
@@ -26,7 +26,7 @@ export default app
 
 ## Documentation
 
-The documentation is available on [hoa-js.com](https://hoa-js.com/middleware/basic-authentication.html)
+The documentation is available on [hoa-js.com](https://hoa-js.com/middleware/basic-auth.html)
 
 ## Test (100% coverage)
 

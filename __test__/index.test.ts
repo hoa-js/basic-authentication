@@ -1,6 +1,6 @@
 import { Hoa } from 'hoa'
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import { basicAuthentication } from '../src/index'
+import { basicAuth } from '../src/index'
 import { tinyRouter } from '@hoajs/tiny-router'
 
 async function defaultHashFunction (data: string | object | boolean) {
@@ -17,7 +17,7 @@ async function defaultHashFunction (data: string | object | boolean) {
   return hash
 }
 
-describe('basicAuthenticationd middleware', () => {
+describe('basicAuthd middleware', () => {
   let handlerExecuted: boolean
 
   beforeEach(() => {
@@ -38,7 +38,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/auth/*',
-    basicAuthentication({
+    basicAuth({
       username,
       password,
     })
@@ -51,7 +51,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/auth-unicode/*',
-    basicAuthentication({
+    basicAuth({
       username,
       password: unicodePassword,
     })
@@ -59,7 +59,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/invalid-base64/*',
-    basicAuthentication({
+    basicAuth({
       username: usernameB,
       password: passwordB,
     })
@@ -67,7 +67,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/auth-multi/*',
-    basicAuthentication(
+    basicAuth(
       {
         username: usernameB,
         password: passwordB,
@@ -81,7 +81,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/auth-override-func/*',
-    basicAuthentication({
+    basicAuth({
       username,
       password,
       hashFunction: defaultHashFunction,
@@ -90,7 +90,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/error-custom-hash-function',
-    basicAuthentication({
+    basicAuth({
       username,
       password,
       hashFunction: (() => false) as any,
@@ -98,11 +98,11 @@ describe('basicAuthenticationd middleware', () => {
   )
 
   app.get('/nested/*', async (c, next) => {
-    const auth = basicAuthentication({ username, password })
+    const auth = basicAuth({ username, password })
     return auth(c, next)
   })
 
-  app.get('/verify-user/*', basicAuthentication({
+  app.get('/verify-user/*', basicAuth({
     verifyUser: (ctx, username, password) => {
       return (
         ctx.req.pathname === '/verify-user' &&
@@ -114,7 +114,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/auth-custom-invalid-user-message-string/*',
-    basicAuthentication({
+    basicAuth({
       username,
       password,
       invalidUserMessage: 'Custom unauthorized message as string',
@@ -123,7 +123,7 @@ describe('basicAuthenticationd middleware', () => {
 
   app.get(
     '/auth-custom-invalid-user-message-function-string/*',
-    basicAuthentication({
+    basicAuth({
       username,
       password,
       invalidUserMessage: () => 'Custom unauthorized message as function string',
@@ -308,8 +308,8 @@ describe('basicAuthenticationd middleware', () => {
   it('Should not authorize - invalid config', async () => {
     expect(() => app.get(
       '/error-config',
-      basicAuthentication({ username } as any)
-    )).toThrow(/basic authentication middleware requires options for "username and password" or "verifyUser"/)
+      basicAuth({ username } as any)
+    )).toThrow(/Basic Auth middleware requires options for "username and password" or "verifyUser"/)
   })
 
   it('should not authorize - custom hash function return falsy', async () => {
