@@ -15,7 +15,10 @@ import { Hoa } from 'hoa'
 import { basicAuth } from '@hoajs/basic-auth'
 
 const app = new Hoa()
-app.use(basicAuth())
+app.use(basicAuth({
+  username: 'admin',
+  password: '123456'
+}))
 
 app.use(async (ctx) => {
   ctx.res.body = `Hello, Hoa!`
